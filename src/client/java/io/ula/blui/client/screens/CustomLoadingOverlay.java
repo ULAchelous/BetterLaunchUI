@@ -5,6 +5,7 @@ import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.minecraft.SharedConstants;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -32,7 +33,8 @@ import java.util.function.IntSupplier;
 
 public class CustomLoadingOverlay extends LoadingOverlay {
     static final ResourceLocation MOJANG_STUDIOS_LOGO_LOCATION = new ResourceLocation("textures/gui/title/mojangstudios.png");
-    private static final int LOGO_BACKGROUND_COLOR = FastColor.ARGB32.color(255, 239, 50, 61);
+    static final ResourceLocation MINECRAFT_LOGO_LOCATION = new ResourceLocation("textures/gui/title/minecraft.png");
+    private static final int LOGO_BACKGROUND_COLOR = FastColor.ARGB32.color(255, 105, 105, 105);
     private static final int LOGO_BACKGROUND_COLOR_DARK = FastColor.ARGB32.color(255, 0, 0, 0);
     private static final IntSupplier BRAND_BACKGROUND = () -> (Boolean) Minecraft.getInstance().options.darkMojangStudiosBackground().get() ? LOGO_BACKGROUND_COLOR_DARK : LOGO_BACKGROUND_COLOR;
     private static final int LOGO_SCALE = 240;
@@ -50,6 +52,7 @@ public class CustomLoadingOverlay extends LoadingOverlay {
     private float currentProgress;
     private long fadeOutStart = -1L;
     private long fadeInStart = -1L;
+    private long onStart;
 
     public CustomLoadingOverlay(Minecraft minecraft, ReloadInstance reloadInstance, Consumer<Optional<Throwable>> consumer, boolean bl) {
         super(minecraft,reloadInstance,consumer,bl);
@@ -57,10 +60,13 @@ public class CustomLoadingOverlay extends LoadingOverlay {
         this.reload = reloadInstance;
         this.onFinish = consumer;
         this.fadeIn = bl;
+        onStart=Util.getMillis();
+        registerTextures(minecraft);
     }
 
     public static void registerTextures(Minecraft minecraft) {
         minecraft.getTextureManager().register(MOJANG_STUDIOS_LOGO_LOCATION, new CustomLoadingOverlay.LogoTexture   (MOJANG_STUDIOS_LOGO_LOCATION));
+        minecraft.getTextureManager().register(MINECRAFT_LOGO_LOCATION,new LogoTexture(MINECRAFT_LOGO_LOCATION));
     }
 
     private static int replaceAlpha(int i, int j) {
@@ -127,15 +133,55 @@ public class CustomLoadingOverlay extends LoadingOverlay {
         guiGraphics.blit(MOJANG_STUDIOS_LOGO_LOCATION, logo_MinX, logo_MinY,  logo_width/2, logo_height,0.0F, 0.0F, 120, 60, 120, 120);
         guiGraphics.blit(MOJANG_STUDIOS_LOGO_LOCATION, logo_MinX + logo_width/2 , logo_MinY,logo_width/2, logo_height, 0.0F, 60.0F,  120, 60, 120, 120);
         guiGraphics.drawString(minecraft.font, Component.translatable("betterlaunchui.loading.present"),logo_MinX - 70,logo_MinY,textColor);
+
+        int mcLogo_width = (int)(width*0.6);
+        int mcLogo_height = (int)(mcLogo_width*0.25);
+        int mcLogo_MinX = (int)(width * 0.02);
+        int mcLogo_MinY = (int)(height * 0.5 - mcLogo_height * 0.5);
+        guiGraphics.blit(MINECRAFT_LOGO_LOCATION,mcLogo_MinX,mcLogo_MinY,mcLogo_width,mcLogo_height,0,0,1024,512,1024,512);
+        guiGraphics.drawString(
+        minecraft.font,
+        Component.translatable("betterlaunchui.loading.greeting",minecraft.getUser().getName()),
+            mcLogo_MinX+mcLogo_width + 20,
+            mcLogo_MinY + mcLogo_height -30,
+            textColor
+        );
+
         guiGraphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableBlend();
         RenderSystem.depthMask(true);
         RenderSystem.enableDepthTest();
 
+        guiGraphics.drawString(
+            minecraft.font,
+            String.format("Minecraft %s", SharedConstants.getCurrentVersion().getName()),
+            0,
+            0,
+            textColor
+        );
+
+        if(!Minecraft.getInstance().options.darkMojangStudiosBackground().get()){
+            guiGraphics.drawString(
+                    minecraft.font,
+                    "建议开启黑白徽标以获得最佳体验！",
+                    0,
+                    10,
+                    textColor
+            );
+        }
+
         float w = this.reload.getActualProgress();
         this.currentProgress = Mth.clamp(this.currentProgress * 0.95F + w * 0.050000012F, 0.0F, 1.0F);
         if (g < 1.0F) {
+            guiGraphics.drawCenteredString(
+                    this.minecraft.font,
+                    Component.translatable("betterlaunchui.loading.progress",(int)(this.currentProgress * 100)),
+                    (int)(width * 0.1),
+                    progressBar_MaxY - 20,
+                    textColor
+            );
+
             this.drawProgressBar(guiGraphics, 0, progressBar_MaxY-3, width, progressBar_MaxY, 1.0F - Mth.clamp(g, 0.0F, 1.0F));
         }
 
@@ -143,7 +189,7 @@ public class CustomLoadingOverlay extends LoadingOverlay {
             this.minecraft.setOverlay((Overlay)null);
         }
 
-        if (this.fadeOutStart == -1L && this.reload.isDone() && (!this.fadeIn || h >= 2.0F)) {
+        if (this.fadeOutStart == -1L && this.reload.isDone() && ((!this.fadeIn && Util.getMillis() - onStart >= 8000L) || h >= 2.0F)) {
             try {
                 this.reload.checkExceptions();
                 this.onFinish.accept(Optional.empty());
