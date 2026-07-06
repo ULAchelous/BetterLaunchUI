@@ -13,6 +13,7 @@ import net.minecraft.client.gui.screens.Overlay;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.SimpleTexture;
 import net.minecraft.client.resources.metadata.texture.TextureMetadataSection;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.VanillaPackResources;
@@ -125,7 +126,7 @@ public class CustomLoadingOverlay extends LoadingOverlay {
         int textColor = this.fadeOutStart > -1L ? FastColor.ARGB32.color(Math.round(1.0F - Mth.clamp(g, 0.0F, 1.0F) * 255.0F),255,255,255) : FastColor.ARGB32.color(255,255,255,255);
         guiGraphics.blit(MOJANG_STUDIOS_LOGO_LOCATION, logo_MinX, logo_MinY,  logo_width/2, logo_height,0.0F, 0.0F, 120, 60, 120, 120);
         guiGraphics.blit(MOJANG_STUDIOS_LOGO_LOCATION, logo_MinX + logo_width/2 , logo_MinY,logo_width/2, logo_height, 0.0F, 60.0F,  120, 60, 120, 120);
-
+        guiGraphics.drawString(minecraft.font, Component.translatable("betterlaunchui.loading.present"),logo_MinX - 70,logo_MinY,textColor);
         guiGraphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableBlend();
@@ -158,11 +159,12 @@ public class CustomLoadingOverlay extends LoadingOverlay {
 
     }
 
-    private void drawProgressBar(GuiGraphics guiGraphics, int i, int j, int k, int l, float f) {
-        int m = Mth.ceil((float)(k - i - 2) * this.currentProgress);
+
+    private void drawProgressBar(GuiGraphics guiGraphics, int frontX, int topY, int endX, int bottomY, float f) {
+        int progress = Mth.ceil((endX - frontX - 2) * this.currentProgress);
         int n = Math.round(f * 255.0F);
-        int o = FastColor.ARGB32.color(n, 255, 255, 255);
-        guiGraphics.fill(i + 2, j + 2, i + m, l - 2, o);
+        int color = FastColor.ARGB32.color(n, 255, 255, 255);
+        guiGraphics.fill(frontX, topY, frontX + progress, bottomY, color);
     }
 
     public boolean isPauseScreen() {
