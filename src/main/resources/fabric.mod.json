@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "betterlaunchui",
+  "version": "${version}",
+  "name": "Better Launch UI",
+  "description": "Better Launch UI\n更好的启动页面",
+  "authors": [],
+  "contact": {},
+  "license": "GPL-3.0",
+  "icon": "assets/betterlaunchui/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-datagen": [
+      "io.ula.blui.client.MainDataGenerator"
+    ],
+    "client": [
+      "io.ula.blui.client.MainClient"
+    ],
+    "main": [
+      "io.ula.blui.Main"
+    ]
+  },
+  "mixins": [
+    "betterlaunchui.mixins.json",
+    {
+      "config": "betterlaunchui.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "minecraft": "${minecraft_version}"
+  }
+}
