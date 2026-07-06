@@ -10,9 +10,6 @@
   "icon": "assets/betterlaunchui/icon.png",
   "environment": "client",
   "entrypoints": {
-    "fabric-datagen": [
-      "io.ula.blui.client.MainDataGenerator"
-    ],
     "client": [
       "io.ula.blui.client.MainClient"
     ],

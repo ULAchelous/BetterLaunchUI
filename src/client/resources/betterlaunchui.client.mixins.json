@@ -1,9 +1,10 @@
 {
   "required": true,
   "minVersion": "0.8",
-  "package": "io.ula.blui.mixin.client",
+  "package": "io.ula.blui.client.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
+    "MinecraftMixin"
   ],
   "injectors": {
     "defaultRequire": 1
