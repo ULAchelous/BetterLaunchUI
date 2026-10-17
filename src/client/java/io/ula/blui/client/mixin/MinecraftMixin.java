@@ -16,7 +16,7 @@ import java.util.function.Consumer;
 public class MinecraftMixin {
 
     @Redirect(method = "<init>",at = @At(value = "NEW", target = "net/minecraft/client/gui/screens/LoadingOverlay"))
-    private LoadingOverlay rediorect(Minecraft minecraft, ReloadInstance reloadInstance, Consumer<Optional<Throwable>> consumer, boolean bl){
+    private LoadingOverlay redirect(Minecraft minecraft, ReloadInstance reloadInstance, Consumer<Optional<Throwable>> consumer, boolean bl){
         return new CustomLoadingOverlay(minecraft,reloadInstance,consumer,bl);
     }
 }

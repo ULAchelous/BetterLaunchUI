@@ -12,6 +12,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.LoadingOverlay;
 import net.minecraft.client.gui.screens.Overlay;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.texture.MipmapStrategy;
 import net.minecraft.client.renderer.texture.ReloadableTexture;
@@ -163,6 +164,8 @@ public class CustomLoadingOverlay extends LoadingOverlay{
                     textColor
             );
         }
+
+
 
         this.currentProgress = Mth.clamp(this.currentProgress * 0.95F + reloadProgress * 0.050000012F, 0.0F, 1.0F);
         if (g < 1.0F) {
