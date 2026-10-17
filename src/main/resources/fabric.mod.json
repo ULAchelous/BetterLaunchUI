@@ -9,6 +9,7 @@
   "license": "GPL-3.0",
   "icon": "assets/betterlaunchui/icon.png",
   "environment": "client",
+  "accessWidener": "betterlaunchui.accesswidener",
   "entrypoints": {
     "client": [
       "io.ula.blui.client.MainClient"
