@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.15.5'
+    id 'net.fabricmc.fabric-loom' version '1.17-SNAPSHOT'
     id 'maven-publish'
 }
 
@@ -12,7 +12,7 @@ base {
 
 loom {
     splitEnvironmentSourceSets()
-
+    accessWidenerPath = file("src/main/resources/betterlaunchui.accesswidener")
     mods {
         "betterlaunchui" {
             sourceSet sourceSets.main
@@ -38,8 +38,7 @@ repositories {
 dependencies {
     // To change the versions see the gradle.properties file
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings loom.officialMojangMappings()
-    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
 }
 

@@ -8,16 +8,14 @@ import net.fabricmc.api.Environment;
 import net.minecraft.SharedConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.font.FontManager;
 import net.minecraft.client.gui.screens.LoadingOverlay;
 import net.minecraft.client.gui.screens.Overlay;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.texture.MipmapStrategy;
-import net.minecraft.client.renderer.texture.ReloadableTexture;
-import net.minecraft.client.renderer.texture.TextureContents;
-import net.minecraft.client.renderer.texture.TextureManager;
+import net.minecraft.client.renderer.texture.*;
 import net.minecraft.client.resources.metadata.texture.TextureMetadataSection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -40,17 +38,7 @@ public class CustomLoadingOverlay extends LoadingOverlay{
     public static final Identifier MINECRAFT_LOGO_LOCATION = Identifier.withDefaultNamespace("textures/gui/title/minecraft.png");
     private static final int LOGO_BACKGROUND_COLOR = ARGB.color(255, 105, 105, 105);
     private static final int LOGO_BACKGROUND_COLOR_DARK = ARGB.color(255, 0, 0, 0);
-    private static final IntSupplier BRAND_BACKGROUND = () -> Minecraft.getInstance().options.darkMojangStudiosBackground().get()
-            ? LOGO_BACKGROUND_COLOR_DARK
-            : LOGO_BACKGROUND_COLOR;
-    private static final int LOGO_SCALE = 240;
-    private static final float LOGO_QUARTER_FLOAT = 60.0F;
-    private static final int LOGO_QUARTER = 60;
-    private static final int LOGO_HALF = 120;
-    private static final float LOGO_OVERLAP = 0.0625F;
-    private static final float SMOOTHING = 0.95F;
-    public static final long FADE_OUT_TIME = 1000L;
-    public static final long FADE_IN_TIME = 500L;
+    private static final IntSupplier BRAND_BACKGROUND = () -> (Boolean)Minecraft.getInstance().options.darkMojangStudiosBackground().get() ? LOGO_BACKGROUND_COLOR_DARK : LOGO_BACKGROUND_COLOR;
     private final Minecraft minecraft;
     private final ReloadInstance reload;
     private final Consumer<Optional<Throwable>> onFinish;
@@ -58,170 +46,168 @@ public class CustomLoadingOverlay extends LoadingOverlay{
     private float currentProgress;
     private long fadeOutStart = -1L;
     private long fadeInStart = -1L;
-    private long onStart = -1L;
-
-    public CustomLoadingOverlay(Minecraft minecraft, ReloadInstance reloadInstance, Consumer<Optional<Throwable>> consumer, boolean bl) {
+    private FontManager fontManager;
+    public CustomLoadingOverlay(Minecraft minecraft,FontManager fontManager, ReloadInstance reloadInstance, Consumer<Optional<Throwable>> consumer, boolean bl) {
         super(minecraft,reloadInstance,consumer,bl);
         this.minecraft = minecraft;
         this.reload = reloadInstance;
         this.onFinish = consumer;
         this.fadeIn = bl;
-        this.onStart = Util.getMillis();
+        this.fontManager = fontManager;
         registerTextures(minecraft.getTextureManager());
     }
 
+
     public static void registerTextures(TextureManager textureManager) {
         textureManager.registerAndLoad(MOJANG_STUDIOS_LOGO_LOCATION, new CustomLoadingOverlay.LogoTexture(MOJANG_STUDIOS_LOGO_LOCATION));
-        textureManager.registerAndLoad(MINECRAFT_LOGO_LOCATION,new CustomLoadingOverlay.LogoTexture(MINECRAFT_LOGO_LOCATION));
+
+        textureManager.registerAndLoad(MINECRAFT_LOGO_LOCATION,new LogoTexture(MINECRAFT_LOGO_LOCATION));
     }
 
-    private static int replaceAlpha(int i, int j) {
-        return i & 16777215 | j << 24;
+    private static int replaceAlpha(final int color, final int alpha) {
+        return color & 16777215 | alpha << 24;
     }
 
-    @Override
-    public void render(GuiGraphics guiGraphics, int i, int j, float f) {
-        int width = guiGraphics.guiWidth();//k
-        int height = guiGraphics.guiHeight();//l
-
-        long m = Util.getMillis();
+    public void extractRenderState(final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY, final float a) {
+        boolean isFontLoaded = fontManager.fontSets.containsKey(Minecraft.DEFAULT_FONT);
+        int width = graphics.guiWidth();
+        int height = graphics.guiHeight();
+        long now = Util.getMillis();
         if (this.fadeIn && this.fadeInStart == -1L) {
-            this.fadeInStart = m;
+            this.fadeInStart = now;
         }
 
-        float g = this.fadeOutStart > -1L ? (float)(m - this.fadeOutStart) / 1000.0F : -1.0F;
-        float h = this.fadeInStart > -1L ? (float)(m - this.fadeInStart) / 500.0F : -1.0F;
-        float o;
-        if (g >= 1.0F) {
-            if (this.minecraft.screen != null) {
-                this.minecraft.screen.renderWithTooltipAndSubtitles(guiGraphics, 0, 0, f);
+        float fadeOutAnim = this.fadeOutStart > -1L ? (float)(now - this.fadeOutStart) / 1000.0F : -1.0F;
+        float fadeInAnim = this.fadeInStart > -1L ? (float)(now - this.fadeInStart) / 500.0F : -1.0F;
+        float logoAlpha;
+        if (fadeOutAnim >= 1.0F) {
+            if (this.minecraft.gui.screen() != null) {
+                this.minecraft.gui.screen().extractRenderStateWithTooltipAndSubtitles(graphics, 0, 0, a);
             } else {
-                this.minecraft.gui.renderDeferredSubtitles();
+                this.minecraft.gui.hud.extractDeferredSubtitles();
             }
 
-            int n = Mth.ceil((1.0F - Mth.clamp(g - 1.0F, 0.0F, 1.0F)) * 255.0F);
-            guiGraphics.nextStratum();
-            guiGraphics.fill(0, 0, width, height, replaceAlpha(BRAND_BACKGROUND.getAsInt(), n));
-            o = 1.0F - Mth.clamp(g - 1.0F, 0.0F, 1.0F);
+            int alpha = Mth.ceil((1.0F - Mth.clamp(fadeOutAnim - 1.0F, 0.0F, 1.0F)) * 255.0F);
+            graphics.nextStratum();
+            graphics.fill(0, 0, width, height, replaceAlpha(BRAND_BACKGROUND.getAsInt(), alpha));
+            logoAlpha = 1.0F - Mth.clamp(fadeOutAnim - 1.0F, 0.0F, 1.0F);
         } else if (this.fadeIn) {
-            if (this.minecraft.screen != null && h < 1.0F) {
-                this.minecraft.screen.renderWithTooltipAndSubtitles(guiGraphics, i, j, f);
+            if (this.minecraft.gui.screen() != null && fadeInAnim < 1.0F) {
+                this.minecraft.gui.screen().extractRenderStateWithTooltipAndSubtitles(graphics, mouseX, mouseY, a);
             } else {
-                this.minecraft.gui.renderDeferredSubtitles();
+                this.minecraft.gui.hud.extractDeferredSubtitles();
             }
 
-            int n = Mth.ceil(Mth.clamp(h, 0.15, 1.0) * 255.0);
-            guiGraphics.nextStratum();
-            guiGraphics.fill(0, 0, width, height, replaceAlpha(BRAND_BACKGROUND.getAsInt(), n));
-            o = Mth.clamp(h, 0.0F, 1.0F);
+            int alpha = Mth.ceil(Mth.clamp((double)fadeInAnim, 0.15, (double)1.0F) * (double)255.0F);
+            graphics.nextStratum();
+            graphics.fill(0, 0, width, height, replaceAlpha(BRAND_BACKGROUND.getAsInt(), alpha));
+            logoAlpha = Mth.clamp(fadeInAnim, 0.0F, 1.0F);
         } else {
-            int n = BRAND_BACKGROUND.getAsInt();
-            RenderSystem.getDevice().createCommandEncoder().clearColorTexture(this.minecraft.getMainRenderTarget().getColorTexture(), n);
-            o = 1.0F;
+            ARGB.setVector4fFromARGB32(this.minecraft.gameRenderer.gameRenderState().guiRenderState.clearColorOverride, BRAND_BACKGROUND.getAsInt());
+            logoAlpha = 1.0F;
         }
-
-
-        int progressBar_MaxY = guiGraphics.guiHeight();//进度条位置（高度）
+        int progressBar_MaxY = graphics.guiHeight();//进度条位置（高度）
         float reloadProgress = this.reload.getActualProgress();
 
         int logo_width = (int)Math.ceil(width * 0.2);
         int logo_height = (int)Math.ceil(logo_width*0.25);
         int logo_MinX = (int)(width * 0.99) - logo_width;
         int logo_MinY = (int)(progressBar_MaxY * 0.99) - logo_height;
-        int s = ARGB.white(o);
-        int textColor = this.fadeOutStart > -1L ?ARGB.color(Math.round(1.0F - Mth.clamp(g, 0.0F, 1.0F) * 255.0F),255,255,255) : ARGB.color(255,255,255);
-        guiGraphics.blit(RenderPipelines.MOJANG_LOGO, MOJANG_STUDIOS_LOGO_LOCATION, logo_MinX, logo_MinY, 0.0F, 0.0F, logo_width/2, logo_height, 120, 60, 120, 120, s);
-        guiGraphics.blit(RenderPipelines.MOJANG_LOGO, MOJANG_STUDIOS_LOGO_LOCATION, logo_MinX + logo_width/2 , logo_MinY, 0.0F, 60.0F, logo_width/2, logo_height, 120, 60, 120, 120, s);
-        guiGraphics.drawString(minecraft.font,Component.translatable("betterlaunchui.loading.present"),logo_MinX - 70,logo_MinY,textColor);
+        int s = ARGB.white(logoAlpha);
+        int textColor = this.fadeOutStart > -1L ?ARGB.color(Math.round(1.0F - Mth.clamp(fadeOutAnim, 0.0F, 1.0F) * 255.0F),255,255,255) : ARGB.color(255,255,255);
+        graphics.blit(RenderPipelines.MOJANG_LOGO, MOJANG_STUDIOS_LOGO_LOCATION, logo_MinX, logo_MinY, 0.0F, 0.0F, logo_width/2, logo_height, 120, 60, 120, 120, s);
+        graphics.blit(RenderPipelines.MOJANG_LOGO, MOJANG_STUDIOS_LOGO_LOCATION, logo_MinX + logo_width/2 , logo_MinY, 0.0F, 60.0F, logo_width/2, logo_height, 120, 60, 120, 120, s);
+        if(isFontLoaded) {
+            Component present = Component.translatableWithFallback("betterlaunchui.loading.present", "resented By");
+            graphics.text(minecraft.font, present, logo_MinX - 70, logo_MinY, s);
+        }
 
         int mcLogo_width = (int)(width*0.6);
         int mcLogo_height = (int)(mcLogo_width*0.25);
         int mcLogo_MinX = (int)(width * 0.02);
         int mcLogo_MinY = (int)(height * 0.5 - mcLogo_height * 0.5);
-        guiGraphics.blit(RenderPipelines.MOJANG_LOGO,MINECRAFT_LOGO_LOCATION,mcLogo_MinX,mcLogo_MinY,0,0,mcLogo_width,mcLogo_height,1024,512,1024,512);
-        guiGraphics.drawString(
-                minecraft.font,
-                Component.translatable("betterlaunchui.loading.greeting",minecraft.getGameProfile().name()),
-                mcLogo_MinX+mcLogo_width + 20,
-                mcLogo_MinY + mcLogo_height -30,
-                textColor
-        );
-
-        guiGraphics.drawString(
-                minecraft.font,
-                String.format("Minecraft %s", SharedConstants.getCurrentVersion().name()),
-                0,
-                0,
-                textColor
-        );
-
-        if(!Minecraft.getInstance().options.darkMojangStudiosBackground().get()){
-            guiGraphics.drawString(
+        graphics.blit(RenderPipelines.MOJANG_LOGO,MINECRAFT_LOGO_LOCATION,mcLogo_MinX,mcLogo_MinY,0,0,mcLogo_width,mcLogo_height,1024,512,1024,512,s);
+        if(isFontLoaded) {
+            graphics.text(
                     minecraft.font,
-                    "建议开启黑白徽标以获得最佳体验！",
-                    0,
-                    10,
-                    textColor
+                    Component.translatableWithFallback("betterlaunchui.loading.greeting", "Welcome, %s", minecraft.getGameProfile().name()),
+                    mcLogo_MinX + mcLogo_width + 20,
+                    mcLogo_MinY + mcLogo_height - 30,
+                    s
             );
-        }
 
+            graphics.text(
+                    minecraft.font,
+                    String.format("Minecraft %s", SharedConstants.getCurrentVersion().name()),
+                    0,
+                    0,
+                    s
+            );
+
+            if (!Minecraft.getInstance().options.darkMojangStudiosBackground().get()) {
+                graphics.text(
+                        minecraft.font,
+                        Component.translatableWithFallback("betterlaunchui.loading.advice", "Enable \"Monochrome Logo\" to get better experience!"),
+                        0,
+                        10,
+                        s
+                );
+            }
+        }
 
 
         this.currentProgress = Mth.clamp(this.currentProgress * 0.95F + reloadProgress * 0.050000012F, 0.0F, 1.0F);
-        if (g < 1.0F) {
-
-            guiGraphics.drawCenteredString(
-                    this.minecraft.font,
-                    Component.translatable("betterlaunchui.loading.progress",(int)(this.currentProgress * 100)),
-                    (int)(width * 0.1),
-                    progressBar_MaxY - 20,
-                    textColor
-            );
-            this.drawProgressBar(guiGraphics, 0, progressBar_MaxY-3, width, progressBar_MaxY, 1.0F - Mth.clamp(g, 0.0F, 1.0F));
+        if (fadeOutAnim < 2.0F) {
+            if(isFontLoaded) {
+                graphics.centeredText(
+                        this.minecraft.font,
+                        Component.translatableWithFallback("betterlaunchui.loading.progress", "Loading... %s%%", Integer.toString ((int)(this.currentProgress * 100))),
+                        (int) (width * 0.1),
+                        progressBar_MaxY - 20,
+                        s
+                );
+            }
+            int progressBarAlpha = Mth.ceil((1.0F - Mth.clamp(fadeOutAnim - 1.0F, 0.0F, 1.0F)) * 255.0F);
+            this.extractProgressBar(graphics, 0, progressBar_MaxY-3, width, progressBar_MaxY,progressBarAlpha);
 
 
         }
 
-        if (g >= 2.0F) {
-            this.minecraft.setOverlay(null);
+        if (fadeOutAnim >= 2.0F) {
+            this.minecraft.gui.setOverlay(null);
         }
+
     }
 
-    @Override
+
     public void tick() {
         if (this.fadeOutStart == -1L && this.reload.isDone() && this.isReadyToFadeOut()) {
             try {
                 this.reload.checkExceptions();
                 this.onFinish.accept(Optional.empty());
-            } catch (Throwable var2) {
-                this.onFinish.accept(Optional.of(var2));
+            } catch (Throwable t) {
+                this.onFinish.accept(Optional.of(t));
             }
 
             this.fadeOutStart = Util.getMillis();
-            if (this.minecraft.screen != null) {
+            if (this.minecraft.gui.screen() != null) {
                 Window window = this.minecraft.getWindow();
-                this.minecraft.screen.init(window.getGuiScaledWidth(), window.getGuiScaledHeight());
+                this.minecraft.gui.screen().init(window.getGuiScaledWidth(), window.getGuiScaledHeight());
             }
         }
+
     }
 
     private boolean isReadyToFadeOut() {
-        return (!this.fadeIn && Util.getMillis() - this.onStart >= 5000L) || this.fadeInStart > -1L && Util.getMillis() - this.fadeInStart >= 1000L;
+        return (!this.fadeIn && Util.getMillis() - this.fadeInStart >= 5000L) || this.fadeInStart > -1L && Util.getMillis() - this.fadeInStart >= 5000L;
     }
 
-    private void drawProgressBar(GuiGraphics guiGraphics, int frontX, int topY, int endX, int bottomY, float f) {
+    private void extractProgressBar(GuiGraphicsExtractor guiGraphics, int frontX, int topY, int endX, int bottomY,int alpha) {
         int progress = Mth.ceil((endX - frontX - 2) * this.currentProgress);
-        int n = Math.round(f * 255.0F);
-        int color = ARGB.color(n, 255, 255, 255);
-        guiGraphics.fill(frontX, topY, frontX + progress, bottomY, color);
+        int color = ARGB.color(255, 255, 255, 255);
+        guiGraphics.fill(frontX, topY, frontX + progress, bottomY, replaceAlpha(color,alpha));
     }
 
-    @Override
-    public boolean isPauseScreen() {
-        return true;
-    }
-
-    @Environment(EnvType.CLIENT)
     static class LogoTexture extends ReloadableTexture {
         private Identifier identifier;
         public LogoTexture(Identifier id) {
@@ -231,7 +217,7 @@ public class CustomLoadingOverlay extends LoadingOverlay{
 
         @Override
         public TextureContents loadContents(ResourceManager resourceManager) throws IOException {
-            ResourceProvider resourceProvider = Minecraft.getInstance().getVanillaPackResources().asProvider();
+            ResourceProvider resourceProvider = Minecraft.getInstance().getVanillaPackResources().asResourceManager();
             InputStream inputStream = resourceProvider.open(identifier);
 
             TextureContents var4;
