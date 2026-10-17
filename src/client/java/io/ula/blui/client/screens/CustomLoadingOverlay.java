@@ -114,17 +114,13 @@ public class CustomLoadingOverlay extends LoadingOverlay {
             o = 1.0F;
         }
 
-        int n = (int)((double)guiGraphics.guiWidth() * (double)0.5F);
-        int s = (int)((double)guiGraphics.guiHeight() * (double)0.5F);
-        double d = Math.min((double)guiGraphics.guiWidth() * (double)0.75F, (double)guiGraphics.guiHeight()) * (double)0.25F;
-        int t = (int)(d * (double)0.5F);
-        double e = d * (double)4.0F;
-        int u = (int)(e * (double)0.5F);
+
         RenderSystem.disableDepthTest();
         RenderSystem.depthMask(false);
         RenderSystem.enableBlend();
         RenderSystem.blendFunc(770, 1);
         guiGraphics.setColor(1.0F, 1.0F, 1.0F, o);
+        int s = FastColor.ARGB32.color((int)(o*255.0F),255,255,255);
 //        guiGraphics.blit(MOJANG_STUDIOS_LOGO_LOCATION, n - u, s - t, u, (int)d, -0.0625F, 0.0F, 120, 60, 120, 120);
 //        guiGraphics.blit(MOJANG_STUDIOS_LOGO_LOCATION, n, s - t, u, (int)d, 0.0625F, 60.0F, 120, 60, 120, 120);
 
@@ -133,28 +129,14 @@ public class CustomLoadingOverlay extends LoadingOverlay {
         int logo_height = (int)Math.ceil(logo_width*0.25);
         int logo_MinX = (int)(width * 0.99) - logo_width;
         int logo_MinY = (int)(progressBar_MaxY * 0.99) - logo_height;
-        int textColor = this.fadeOutStart > -1L ? FastColor.ARGB32.color(Math.round(1.0F - Mth.clamp(g, 0.0F, 1.0F) * 255.0F),255,255,255) : FastColor.ARGB32.color(255,255,255,255);
         guiGraphics.blit(MOJANG_STUDIOS_LOGO_LOCATION, logo_MinX, logo_MinY,  logo_width/2, logo_height,0.0F, 0.0F, 120, 60, 120, 120);
         guiGraphics.blit(MOJANG_STUDIOS_LOGO_LOCATION, logo_MinX + logo_width/2 , logo_MinY,logo_width/2, logo_height, 0.0F, 60.0F,  120, 60, 120, 120);
-        if (isFontLoaded) {
-            guiGraphics.drawString(minecraft.font, Component.translatableWithFallback("betterlaunchui.loading.present", "Presented By"), logo_MinX - 70, logo_MinY, textColor);
-        }
 
         int mcLogo_width = (int)(width*0.6);
         int mcLogo_height = (int)(mcLogo_width*0.25);
         int mcLogo_MinX = (int)(width * 0.02);
         int mcLogo_MinY = (int)(height * 0.5 - mcLogo_height * 0.5);
         guiGraphics.blit(MINECRAFT_LOGO_LOCATION,mcLogo_MinX,mcLogo_MinY,mcLogo_width,mcLogo_height,0,0,1024,512,1024,512);
-        if (isFontLoaded) {
-            guiGraphics.drawString(
-            minecraft.font,
-            Component.translatableWithFallback("betterlaunchui.loading.greeting", "Welcome, %s", minecraft.getUser().getName()),
-                mcLogo_MinX+mcLogo_width + 20,
-                mcLogo_MinY + mcLogo_height -30,
-                textColor
-            );
-        }
-
         guiGraphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableBlend();
@@ -162,12 +144,26 @@ public class CustomLoadingOverlay extends LoadingOverlay {
         RenderSystem.enableDepthTest();
 
         if (isFontLoaded) {
+            guiGraphics.drawString(minecraft.font, Component.translatableWithFallback("betterlaunchui.loading.present", "Presented By"), logo_MinX - 70, logo_MinY, s);
+        }
+
+        if (isFontLoaded) {
+            guiGraphics.drawString(
+            minecraft.font,
+            Component.translatableWithFallback("betterlaunchui.loading.greeting", "Welcome, %s", minecraft.getUser().getName()),
+                mcLogo_MinX+mcLogo_width + 20,
+                mcLogo_MinY + mcLogo_height -30,
+                s
+            );
+        }
+
+        if (isFontLoaded) {
             guiGraphics.drawString(
                 minecraft.font,
                 String.format("Minecraft %s", SharedConstants.getCurrentVersion().getName()),
                 0,
                 0,
-                textColor
+                s
             );
         }
 
@@ -177,31 +173,31 @@ public class CustomLoadingOverlay extends LoadingOverlay {
                     Component.translatableWithFallback("betterlaunchui.loading.advice", "Enable \"Monochrome Logo\" to get better experience!"),
                     0,
                     10,
-                    textColor
+                    s
             );
         }
 
         float w = this.reload.getActualProgress();
         this.currentProgress = Mth.clamp(this.currentProgress * 0.95F + w * 0.050000012F, 0.0F, 1.0F);
-        if (g < 1.0F) {
+        if (g < 2.0F) {
             if (isFontLoaded) {
                 guiGraphics.drawCenteredString(
                         this.minecraft.font,
                         Component.translatableWithFallback("betterlaunchui.loading.progress", "Loading... %s%%", (int) (this.currentProgress * 100)),
                         (int) (width * 0.1),
                         progressBar_MaxY - 20,
-                        textColor
+                        s
                 );
             }
-
-            this.drawProgressBar(guiGraphics, 0, progressBar_MaxY-3, width, progressBar_MaxY, 1.0F - Mth.clamp(g, 0.0F, 1.0F));
+            int progressBarAlpha = Mth.ceil((1.0F - Mth.clamp(g - 1.0F, 0.0F, 1.0F)) * 255.0F);
+            this.drawProgressBar(guiGraphics, 0, progressBar_MaxY-3, width, progressBar_MaxY, progressBarAlpha);
         }
 
         if (g >= 2.0F) {
             this.minecraft.setOverlay((Overlay)null);
         }
 
-        if (this.fadeOutStart == -1L && this.reload.isDone() && ((!this.fadeIn && Util.getMillis() - onStart >= 8000L) || h >= 2.0F)) {
+        if (this.fadeOutStart == -1L && this.reload.isDone() && ((!this.fadeIn && Util.getMillis() - onStart >= 4000L) || h >= 2.0F)) {
             try {
                 this.reload.checkExceptions();
                 this.onFinish.accept(Optional.empty());
@@ -218,11 +214,10 @@ public class CustomLoadingOverlay extends LoadingOverlay {
     }
 
 
-    private void drawProgressBar(GuiGraphics guiGraphics, int frontX, int topY, int endX, int bottomY, float f) {
+    private void drawProgressBar(GuiGraphics guiGraphics, int frontX, int topY, int endX, int bottomY, int alpha) {
         int progress = Mth.ceil((endX - frontX - 2) * this.currentProgress);
-        int n = Math.round(f * 255.0F);
-        int color = FastColor.ARGB32.color(n, 255, 255, 255);
-        guiGraphics.fill(frontX, topY, frontX + progress, bottomY, color);
+        int color = FastColor.ARGB32.color(255, 255, 255, 255);
+        guiGraphics.fill(frontX, topY, frontX + progress, bottomY, replaceAlpha(color,alpha));
     }
 
     public boolean isPauseScreen() {
