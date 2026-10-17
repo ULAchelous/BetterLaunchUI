@@ -217,7 +217,7 @@ public class CustomLoadingOverlay extends LoadingOverlay{
 
         @Override
         public TextureContents loadContents(ResourceManager resourceManager) throws IOException {
-            ResourceProvider resourceProvider = Minecraft.getInstance().getVanillaPackResources().asResourceManager();
+            ResourceProvider resourceProvider = Minecraft.getInstance().getVanillaPackResources().asProvider();
             InputStream inputStream = resourceProvider.open(identifier);
 
             TextureContents var4;
