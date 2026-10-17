@@ -1,5 +1,6 @@
 {
-  "betterlaunchui.loading.progress": "Loading... %d%%",
+  "betterlaunchui.loading.progress": "Loading... %s%%",
   "betterlaunchui.loading.present": "Presented By",
-  "betterlaunchui.loading.greeting": "Welcome, %s"
+  "betterlaunchui.loading.greeting": "Welcome, %s",
+  "betterlaunchui.loading.advice": "Enable \"Monochrome Logo\" to get better experience!"
 }
