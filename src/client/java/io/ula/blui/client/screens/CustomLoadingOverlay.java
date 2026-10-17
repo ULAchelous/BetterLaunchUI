@@ -3,8 +3,6 @@ package io.ula.blui.client.screens;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.minecraft.SharedConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -132,7 +130,7 @@ public class CustomLoadingOverlay extends LoadingOverlay{
         int textColor = this.fadeOutStart > -1L ?ARGB.color(Math.round(1.0F - Mth.clamp(g, 0.0F, 1.0F) * 255.0F),255,255,255) : ARGB.color(255,255,255);
         guiGraphics.blit(RenderPipelines.MOJANG_LOGO, MOJANG_STUDIOS_LOGO_LOCATION, logo_MinX, logo_MinY, 0.0F, 0.0F, logo_width/2, logo_height, 120, 60, 120, 120, s);
         guiGraphics.blit(RenderPipelines.MOJANG_LOGO, MOJANG_STUDIOS_LOGO_LOCATION, logo_MinX + logo_width/2 , logo_MinY, 0.0F, 60.0F, logo_width/2, logo_height, 120, 60, 120, 120, s);
-        guiGraphics.drawString(minecraft.font,Component.translatable("betterlaunchui.loading.present"),logo_MinX - 70,logo_MinY,textColor);
+        guiGraphics.drawString(minecraft.font,Component.translatableWithFallback("betterlaunchui.loading.present","Presented By"),logo_MinX - 70,logo_MinY,textColor);
 
         int mcLogo_width = (int)(width*0.6);
         int mcLogo_height = (int)(mcLogo_width*0.25);
@@ -141,7 +139,7 @@ public class CustomLoadingOverlay extends LoadingOverlay{
         guiGraphics.blit(RenderPipelines.MOJANG_LOGO,MINECRAFT_LOGO_LOCATION,mcLogo_MinX,mcLogo_MinY,0,0,mcLogo_width,mcLogo_height,1024,512,1024,512);
         guiGraphics.drawString(
                 minecraft.font,
-                Component.translatable("betterlaunchui.loading.greeting",minecraft.getGameProfile().name()),
+                Component.translatableWithFallback("betterlaunchui.loading.greeting",minecraft.getGameProfile().name()),
                 mcLogo_MinX+mcLogo_width + 20,
                 mcLogo_MinY + mcLogo_height -30,
                 textColor
@@ -172,7 +170,7 @@ public class CustomLoadingOverlay extends LoadingOverlay{
 
             guiGraphics.drawCenteredString(
                     this.minecraft.font,
-                    Component.translatable("betterlaunchui.loading.progress",(int)(this.currentProgress * 100)),
+                    Component.translatableWithFallback("betterlaunchui.loading.progress","Loading... %d%%",(int)(this.currentProgress * 100)),
                     (int)(width * 0.1),
                     progressBar_MaxY - 20,
                     textColor
@@ -221,7 +219,6 @@ public class CustomLoadingOverlay extends LoadingOverlay{
         return true;
     }
 
-    @Environment(EnvType.CLIENT)
     static class LogoTexture extends ReloadableTexture {
         private Identifier identifier;
         public LogoTexture(Identifier id) {
