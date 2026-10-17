@@ -175,7 +175,7 @@ public class CustomLoadingOverlay extends LoadingOverlay{
                         s
                 );
             }
-            int progressBarAlpha = Mth.ceil(Mth.clamp(h, 0.15, 1.0) * 255.0);
+            int progressBarAlpha = Mth.ceil((1.0F - Mth.clamp(g - 1.0F, 0.0F, 1.0F)) * 255.0F);
             this.drawProgressBar(guiGraphics, 0, progressBar_MaxY-3, width, progressBar_MaxY, progressBarAlpha);
         }
 
