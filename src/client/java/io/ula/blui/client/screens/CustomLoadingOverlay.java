@@ -165,7 +165,7 @@ public class CustomLoadingOverlay extends LoadingOverlay{
 
 
         this.currentProgress = Mth.clamp(this.currentProgress * 0.95F + reloadProgress * 0.050000012F, 0.0F, 1.0F);
-        if (g < 1.0F) {
+        if (g < 2.0F) {
             if (isFontLoaded) {
                 guiGraphics.drawCenteredString(
                         this.minecraft.font,
@@ -209,7 +209,7 @@ public class CustomLoadingOverlay extends LoadingOverlay{
     private void drawProgressBar(GuiGraphics guiGraphics, int frontX, int topY, int endX, int bottomY, int alpha) {
         int progress = Mth.ceil((endX - frontX - 2) * this.currentProgress);
         int color = ARGB.color(255, 255, 255, 255);
-        guiGraphics.fill(frontX, topY, frontX + progress, bottomY, color);
+        guiGraphics.fill(frontX, topY, frontX + progress, bottomY, replaceAlpha(color,alpha));
     }
 
     @Override
