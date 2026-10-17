@@ -123,25 +123,24 @@ public class CustomLoadingOverlay extends LoadingOverlay{
         int logo_MinX = (int)(width * 0.99) - logo_width;
         int logo_MinY = (int)(progressBar_MaxY * 0.99) - logo_height;
         int s = ARGB.white(o);
-        int textColor = this.fadeOutStart > -1L ?ARGB.color(Math.round(1.0F - Mth.clamp(g, 0.0F, 1.0F) * 255.0F),255,255,255) : ARGB.color(255,255,255);
         guiGraphics.blit(RenderPipelines.MOJANG_LOGO, MOJANG_STUDIOS_LOGO_LOCATION, logo_MinX, logo_MinY, 0.0F, 0.0F, logo_width/2, logo_height, 120, 60, 120, 120, s);
         guiGraphics.blit(RenderPipelines.MOJANG_LOGO, MOJANG_STUDIOS_LOGO_LOCATION, logo_MinX + logo_width/2 , logo_MinY, 0.0F, 60.0F, logo_width/2, logo_height, 120, 60, 120, 120, s);
         if (isFontLoaded) {
-            guiGraphics.drawString(minecraft.font, Component.translatableWithFallback("betterlaunchui.loading.present", "Presented By"), logo_MinX - 70, logo_MinY, textColor);
+            guiGraphics.drawString(minecraft.font, Component.translatableWithFallback("betterlaunchui.loading.present", "Presented By"), logo_MinX - 70, logo_MinY, s);
         }
 
         int mcLogo_width = (int)(width*0.6);
         int mcLogo_height = (int)(mcLogo_width*0.25);
         int mcLogo_MinX = (int)(width * 0.02);
         int mcLogo_MinY = (int)(height * 0.5 - mcLogo_height * 0.5);
-        guiGraphics.blit(RenderPipelines.MOJANG_LOGO,MINECRAFT_LOGO_LOCATION,mcLogo_MinX,mcLogo_MinY,0,0,mcLogo_width,mcLogo_height,1024,512,1024,512);
+        guiGraphics.blit(RenderPipelines.MOJANG_LOGO,MINECRAFT_LOGO_LOCATION,mcLogo_MinX,mcLogo_MinY,0,0,mcLogo_width,mcLogo_height,1024,512,1024,512,s);
         if (isFontLoaded) {
             guiGraphics.drawString(
                     minecraft.font,
                     Component.translatableWithFallback("betterlaunchui.loading.greeting", "Welcome, %s", minecraft.getGameProfile().name()),
                     mcLogo_MinX+mcLogo_width + 20,
                     mcLogo_MinY + mcLogo_height -30,
-                    textColor
+                    s
             );
 
             guiGraphics.drawString(
@@ -149,7 +148,7 @@ public class CustomLoadingOverlay extends LoadingOverlay{
                     String.format("Minecraft %s", SharedConstants.getCurrentVersion().name()),
                     0,
                     0,
-                    textColor
+                    s
             );
 
             if (!Minecraft.getInstance().options.darkMojangStudiosBackground().get()) {
@@ -158,7 +157,7 @@ public class CustomLoadingOverlay extends LoadingOverlay{
                         Component.translatableWithFallback("betterlaunchui.loading.advice", "Enable \"Monochrome Logo\" to get better experience!"),
                         0,
                         10,
-                        textColor
+                        s
                 );
             }
         }
@@ -173,12 +172,11 @@ public class CustomLoadingOverlay extends LoadingOverlay{
                         Component.translatableWithFallback("betterlaunchui.loading.progress", "Loading... %s%%", (int) (this.currentProgress * 100)),
                         (int) (width * 0.1),
                         progressBar_MaxY - 20,
-                        textColor
+                        s
                 );
             }
-            this.drawProgressBar(guiGraphics, 0, progressBar_MaxY-3, width, progressBar_MaxY, 1.0F - Mth.clamp(g, 0.0F, 1.0F));
-
-
+            int progressBarAlpha = Mth.ceil(Mth.clamp(h, 0.15, 1.0) * 255.0);
+            this.drawProgressBar(guiGraphics, 0, progressBar_MaxY-3, width, progressBar_MaxY, progressBarAlpha);
         }
 
         if (g >= 2.0F) {
@@ -208,10 +206,9 @@ public class CustomLoadingOverlay extends LoadingOverlay{
         return (!this.fadeIn && Util.getMillis() - this.onStart >= 5000L) || this.fadeInStart > -1L && Util.getMillis() - this.fadeInStart >= 1000L;
     }
 
-    private void drawProgressBar(GuiGraphics guiGraphics, int frontX, int topY, int endX, int bottomY, float f) {
+    private void drawProgressBar(GuiGraphics guiGraphics, int frontX, int topY, int endX, int bottomY, int alpha) {
         int progress = Mth.ceil((endX - frontX - 2) * this.currentProgress);
-        int n = Math.round(f * 255.0F);
-        int color = ARGB.color(n, 255, 255, 255);
+        int color = ARGB.color(255, 255, 255, 255);
         guiGraphics.fill(frontX, topY, frontX + progress, bottomY, color);
     }
 
