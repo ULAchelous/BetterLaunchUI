@@ -7,6 +7,7 @@ import net.minecraft.SharedConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.font.FontManager;
 import net.minecraft.client.gui.screens.LoadingOverlay;
 import net.minecraft.client.gui.screens.Overlay;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
@@ -50,6 +51,7 @@ public class CustomLoadingOverlay extends LoadingOverlay{
     public static final long FADE_OUT_TIME = 1000L;
     public static final long FADE_IN_TIME = 500L;
     private final Minecraft minecraft;
+    private final FontManager fontManager;
     private final ReloadInstance reload;
     private final Consumer<Optional<Throwable>> onFinish;
     private final boolean fadeIn;
@@ -58,9 +60,10 @@ public class CustomLoadingOverlay extends LoadingOverlay{
     private long fadeInStart = -1L;
     private long onStart = -1L;
 
-    public CustomLoadingOverlay(Minecraft minecraft, ReloadInstance reloadInstance, Consumer<Optional<Throwable>> consumer, boolean bl) {
+    public CustomLoadingOverlay(Minecraft minecraft, FontManager fontManager, ReloadInstance reloadInstance, Consumer<Optional<Throwable>> consumer, boolean bl) {
         super(minecraft,reloadInstance,consumer,bl);
         this.minecraft = minecraft;
+        this.fontManager = fontManager;
         this.reload = reloadInstance;
         this.onFinish = consumer;
         this.fadeIn = bl;
@@ -79,6 +82,7 @@ public class CustomLoadingOverlay extends LoadingOverlay{
 
     @Override
     public void render(GuiGraphics guiGraphics, int i, int j, float f) {
+        boolean isFontLoaded = fontManager.fontSets.containsKey(Minecraft.DEFAULT_FONT);
         int width = guiGraphics.guiWidth();//k
         int height = guiGraphics.guiHeight();//l
 
@@ -130,51 +134,56 @@ public class CustomLoadingOverlay extends LoadingOverlay{
         int textColor = this.fadeOutStart > -1L ?ARGB.color(Math.round(1.0F - Mth.clamp(g, 0.0F, 1.0F) * 255.0F),255,255,255) : ARGB.color(255,255,255);
         guiGraphics.blit(RenderPipelines.MOJANG_LOGO, MOJANG_STUDIOS_LOGO_LOCATION, logo_MinX, logo_MinY, 0.0F, 0.0F, logo_width/2, logo_height, 120, 60, 120, 120, s);
         guiGraphics.blit(RenderPipelines.MOJANG_LOGO, MOJANG_STUDIOS_LOGO_LOCATION, logo_MinX + logo_width/2 , logo_MinY, 0.0F, 60.0F, logo_width/2, logo_height, 120, 60, 120, 120, s);
-        guiGraphics.drawString(minecraft.font,Component.translatableWithFallback("betterlaunchui.loading.present","Presented By"),logo_MinX - 70,logo_MinY,textColor);
+        if (isFontLoaded) {
+            guiGraphics.drawString(minecraft.font, Component.translatableWithFallback("betterlaunchui.loading.present", "Presented By"), logo_MinX - 70, logo_MinY, textColor);
+        }
 
         int mcLogo_width = (int)(width*0.6);
         int mcLogo_height = (int)(mcLogo_width*0.25);
         int mcLogo_MinX = (int)(width * 0.02);
         int mcLogo_MinY = (int)(height * 0.5 - mcLogo_height * 0.5);
         guiGraphics.blit(RenderPipelines.MOJANG_LOGO,MINECRAFT_LOGO_LOCATION,mcLogo_MinX,mcLogo_MinY,0,0,mcLogo_width,mcLogo_height,1024,512,1024,512);
-        guiGraphics.drawString(
-                minecraft.font,
-                Component.translatableWithFallback("betterlaunchui.loading.greeting",minecraft.getGameProfile().name()),
-                mcLogo_MinX+mcLogo_width + 20,
-                mcLogo_MinY + mcLogo_height -30,
-                textColor
-        );
-
-        guiGraphics.drawString(
-                minecraft.font,
-                String.format("Minecraft %s", SharedConstants.getCurrentVersion().name()),
-                0,
-                0,
-                textColor
-        );
-
-        if(!Minecraft.getInstance().options.darkMojangStudiosBackground().get()){
+        if (isFontLoaded) {
             guiGraphics.drawString(
                     minecraft.font,
-                    "建议开启黑白徽标以获得最佳体验！",
-                    0,
-                    10,
+                    Component.translatableWithFallback("betterlaunchui.loading.greeting", "Welcome, %s", minecraft.getGameProfile().name()),
+                    mcLogo_MinX+mcLogo_width + 20,
+                    mcLogo_MinY + mcLogo_height -30,
                     textColor
             );
+
+            guiGraphics.drawString(
+                    minecraft.font,
+                    String.format("Minecraft %s", SharedConstants.getCurrentVersion().name()),
+                    0,
+                    0,
+                    textColor
+            );
+
+            if (!Minecraft.getInstance().options.darkMojangStudiosBackground().get()) {
+                guiGraphics.drawString(
+                        minecraft.font,
+                        Component.translatableWithFallback("betterlaunchui.loading.advice", "Enable \"Monochrome Logo\" to get better experience!"),
+                        0,
+                        10,
+                        textColor
+                );
+            }
         }
 
 
 
         this.currentProgress = Mth.clamp(this.currentProgress * 0.95F + reloadProgress * 0.050000012F, 0.0F, 1.0F);
         if (g < 1.0F) {
-
-            guiGraphics.drawCenteredString(
-                    this.minecraft.font,
-                    Component.translatableWithFallback("betterlaunchui.loading.progress","Loading... %d%%",(int)(this.currentProgress * 100)),
-                    (int)(width * 0.1),
-                    progressBar_MaxY - 20,
-                    textColor
-            );
+            if (isFontLoaded) {
+                guiGraphics.drawCenteredString(
+                        this.minecraft.font,
+                        Component.translatableWithFallback("betterlaunchui.loading.progress", "Loading... %s%%", (int) (this.currentProgress * 100)),
+                        (int) (width * 0.1),
+                        progressBar_MaxY - 20,
+                        textColor
+                );
+            }
             this.drawProgressBar(guiGraphics, 0, progressBar_MaxY-3, width, progressBar_MaxY, 1.0F - Mth.clamp(g, 0.0F, 1.0F));
 
 
